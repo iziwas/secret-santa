@@ -108,7 +108,7 @@ secret-santa/
 ├── src/
 │   ├── App.jsx           # Composant principal
 │   ├── main.jsx          # Point d'entrée
-│   └── index.css         # Styles globaux
+│   └── App.css           # Styles globaux
 ├── public/               # Fichiers statiques
 ├── index.html            # Template HTML
 ├── package.json          # Dépendances du projet
@@ -118,7 +118,7 @@ secret-santa/
 └── README.md             # Ce fichier
 ```
 
-## 📊 Format du fichier Excel
+## Format du fichier Excel
 
 ### Onglet 1 - Participants
 
@@ -137,14 +137,14 @@ secret-santa/
 | Bob     | Alice               |
 | Claire  | David               |
 
-## 🎯 Utilisation
+## Utilisation
 
 1. **Importer un fichier Excel** ou ajouter des participants manuellement
 2. **Définir les exclusions** (couples, famille, etc.)
 3. **Générer le Secret Santa** en un clic
 4. **Télécharger les résultats** au format Excel
 
-## 🛠️ Technologies utilisées
+## Technologies utilisées
 
 - **React 18** - Framework JavaScript
 - **Vite** - Build tool ultra-rapide
@@ -153,7 +153,7 @@ secret-santa/
 - **Lucide React** - Icônes modernes
 - **Nginx** - Serveur web (pour Docker)
 
-## 🐛 Résolution de problèmes
+## Résolution de problèmes
 
 ### Erreur "Node.js version required"
 
@@ -187,15 +187,11 @@ Si l'algorithme ne trouve pas de solution après 1000 tentatives :
 - Vérifiez qu'il n'y a pas de conflits circulaires
 - Assurez-vous d'avoir au moins 3 participants
 
-## 📝 License
+## License
 
 MIT License - Libre d'utilisation et modification
 
-## 👤 Auteur
-
-Votre Nom - [GitHub](https://github.com/votre-username)
-
-## 🤝 Contribution
+## Contribution
 
 Les contributions sont les bienvenues ! N'hésitez pas à :
 1. Fork le projet
@@ -204,7 +200,7 @@ Les contributions sont les bienvenues ! N'hésitez pas à :
 4. Push vers la branche (`git push origin feature/amelioration`)
 5. Ouvrir une Pull Request
 
-## ⭐ Support
+## Support
 
 Si ce projet vous a été utile, n'hésitez pas à lui donner une étoile sur GitHub !
 
