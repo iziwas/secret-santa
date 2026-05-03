@@ -77,33 +77,54 @@ export default function SecretSantaApp() {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Validation du fichier
+        const maxFileSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxFileSize) {
+            setError('Le fichier est trop volumineux (max 5MB)');
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+                // Utiliser defval pour éviter les injections de propriétés
+                const workbook = XLSX.read(data, { type: 'array', defval: '' });
+
+                // Validation des onglets
+                if (!workbook.SheetNames || workbook.SheetNames.length < 2) {
+                    setError('Le fichier doit contenir au moins 2 onglets.');
+                    return;
+                }
 
                 // Lecture du premier onglet (participants)
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const participantsData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                const participantsData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
                 const participantsList = participantsData
                     .slice(1)
-                    .map(row => row[0])
-                    .filter(name => name && name.trim());
+                    .map(row => String(row[0] || '').trim())
+                    .filter(name => name && name.length > 0 && name.length <= 100);
+
+                if (participantsList.length === 0) {
+                    setError('Aucun participant valide trouvé. Vérifie l\'onglet 1.');
+                    return;
+                }
 
                 // Lecture du deuxième onglet (exclusions)
                 const secondSheet = workbook.Sheets[workbook.SheetNames[1]];
-                const exclusionsData = XLSX.utils.sheet_to_json(secondSheet, { header: 1 });
+                const exclusionsData = XLSX.utils.sheet_to_json(secondSheet, { header: 1, defval: '' });
 
                 const exclusionsMap = {};
                 for (let i = 1; i < exclusionsData.length; i++) {
-                    const giver = exclusionsData[i][0];
-                    const excluded = exclusionsData[i][1];
-                    if (giver && excluded) {
+                    const giver = String(exclusionsData[i][0] || '').trim();
+                    const excluded = String(exclusionsData[i][1] || '').trim();
+                    if (giver && excluded && giver.length <= 100 && excluded.length <= 100) {
                         if (!exclusionsMap[giver]) {
                             exclusionsMap[giver] = [];
                         }
-                        exclusionsMap[giver].push(excluded);
+                        if (!exclusionsMap[giver].includes(excluded)) {
+                            exclusionsMap[giver].push(excluded);
+                        }
                     }
                 }
 
