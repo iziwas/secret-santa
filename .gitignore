@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Résidus Windows (Alternate Data Streams)
+*:Zone.Identifier
+*Zone.Identifier
