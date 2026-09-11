@@ -2,8 +2,8 @@
 
 Application web moderne pour générer automatiquement les attributions de Secret Santa avec gestion des exclusions.
 
-![React](https://img.shields.io/badge/React-18.x-blue)
-![Vite](https://img.shields.io/badge/Vite-5.x-646CFF)
+![React](https://img.shields.io/badge/React-19.x-blue)
+![Vite](https://img.shields.io/badge/Vite-7.x-646CFF)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Fonctionnalités
@@ -146,12 +146,15 @@ secret-santa/
 
 ## Technologies utilisées
 
-- **React 18** - Framework JavaScript
-- **Vite** - Build tool ultra-rapide
-- **Tailwind CSS** - Framework CSS (via CDN)
-- **SheetJS (xlsx)** - Lecture/écriture Excel
+- **React 19** - Framework JavaScript
+- **Vite 7** - Build tool ultra-rapide
+- **Tailwind CSS 4** - Framework CSS, compilé au build via `@tailwindcss/vite`
+- **IBM Plex Sans / IBM Plex Mono** - Typographies (Google Fonts)
+- **SheetJS (xlsx)** - Lecture/écriture Excel, installé depuis le CDN officiel
+  `cdn.sheetjs.com` (le paquet publié sur npm est figé en 0.18.5 et porte deux
+  vulnérabilités non corrigées). Le build nécessite donc un accès réseau à ce CDN.
 - **Lucide React** - Icônes modernes
-- **Nginx** - Serveur web (pour Docker)
+- **serve** - Serveur de fichiers statiques (pour Docker)
 
 ## Résolution de problèmes
 
