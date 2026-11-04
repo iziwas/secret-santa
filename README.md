@@ -64,6 +64,9 @@ npm run preview
 
 # Linter (vérifier le code)
 npm run lint
+
+# Tests
+npm test
 ```
 
 ## Utilisation avec Docker

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import { Upload, AlertCircle } from 'lucide-react';
+import { generateAssignments } from './secretSanta';
 
 export default function SecretSantaApp() {
     const [participants, setParticipants] = useState([]);
@@ -138,59 +139,21 @@ export default function SecretSantaApp() {
         reader.readAsArrayBuffer(file);
     };
 
-    const shuffleArray = (array) => {
-        const shuffled = [...array];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        return shuffled;
-    };
-
     const generateSecretSanta = () => {
         if (participants.length < 2) {
             setError('Il faut au moins 2 participants.');
             return;
         }
 
-        let attempts = 0;
-        const maxAttempts = 1000;
+        const result = generateAssignments(participants, exclusions);
 
-        while (attempts < maxAttempts) {
-            const givers = [...participants];
-            const receivers = shuffleArray([...participants]);
-            const result = [];
-            let valid = true;
-
-            for (let i = 0; i < givers.length; i++) {
-                const giver = givers[i];
-                const receiver = receivers[i];
-
-                // Vérifier qu'on ne donne pas à soi-même
-                if (giver === receiver) {
-                    valid = false;
-                    break;
-                }
-
-                // Vérifier les exclusions
-                if (exclusions[giver] && exclusions[giver].includes(receiver)) {
-                    valid = false;
-                    break;
-                }
-
-                result.push({ giver, receiver });
-            }
-
-            if (valid) {
-                setAssignments(result);
-                setError('');
-                return;
-            }
-
-            attempts++;
+        if (!result) {
+            setError('Impossible de générer un Secret Santa valide avec ces exclusions. Essayez de réduire les exclusions.');
+            return;
         }
 
-        setError('Impossible de générer un Secret Santa valide avec ces exclusions. Essayez de réduire les exclusions.');
+        setAssignments(result);
+        setError('');
     };
 
     const downloadResults = () => {
