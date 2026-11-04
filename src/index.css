@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Direction « outil de travail » : neutres légèrement bleutés plutôt que gris
+   purs, un seul accent (bleu ardoise) et un rouge réservé au sémantique —
+   erreurs et exclusions — pour qu'il garde sa valeur d'alerte. */
+@theme {
+    --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+    --color-canvas: #f4f6f8;
+    --color-panel: #ffffff;
+    --color-text: #15202b;
+    --color-muted: #5b6b7b;
+    --color-faint: #8b9aa8;
+    --color-line: #dde3e9;
+    --color-line-strong: #c3ccd6;
+    --color-accent: #2c4a6e;
+    --color-accent-hover: #1e3550;
+    --color-accent-wash: #eef2f6;
+    --color-danger: #b42318;
+    --color-danger-wash: #fef3f2;
+
+    --radius-panel: 2px;
+}
+
+html {
+    background-color: var(--color-canvas);
+}
+
+body {
+    margin: 0;
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+/* Les chiffres doivent s'aligner en colonne dans les listes et les compteurs. */
+.tnum {
+    font-variant-numeric: tabular-nums;
+}

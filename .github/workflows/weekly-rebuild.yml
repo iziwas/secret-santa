@@ -1,0 +1,76 @@
+name: Reconstruction hebdomadaire
+
+on:
+  schedule:
+    # Le lundi à 04:17 UTC
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rebuild:
+    name: Reconstruction, scan et publication de latest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      # "schedule" s'exécute sur la branche par défaut (develop), mais latest vient de main
+      - id: checkout
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@v4
+
+      # Sans cache, pour embarquer les derniers correctifs des images de base et d'Alpine
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          pull: true
+          no-cache: true
+          tags: secret-santa:weekly
+
+      # Échoue, et bloque la publication, sur une CVE haute ou critique ayant un correctif.
+      # Épinglé sur un commit : un tag d'action peut être déplacé. Dependabot le met à jour.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.1
+          image-ref: secret-santa:weekly
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: 1
+
+      - name: Démarrer le conteneur
+        run: >-
+          docker run -d --name secret-santa -p 3000:3000
+          --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges
+          secret-santa:weekly
+
+      - name: Vérifier que l'application répond
+        run: |
+          curl --fail --silent --show-error \
+            --retry 15 --retry-delay 1 --retry-all-errors \
+            --output index.html http://localhost:3000/
+          grep -q '<div id="root">' index.html
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Réutilise les couches construites et scannées ci-dessus
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.checkout.outputs.commit }}
