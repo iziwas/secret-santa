@@ -80,10 +80,26 @@ docker build -t secret-santa .
 ### Lancer le conteneur
 
 ```bash
-docker run -d -p 8080:80 --name secret-santa-app secret-santa
+docker run -d -p 8080:3000 --name secret-santa-app \
+  --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+  secret-santa
 ```
 
 Accédez à l'application sur `http://localhost:8080`
+
+L'image ne contient que nginx et les fichiers statiques, et tourne sans root. Les options
+`--read-only`, `--tmpfs`, `--cap-drop` et `--security-opt` sont facultatives mais recommandées.
+
+En production, placez l'application derrière un reverse proxy qui gère HTTPS et l'en-tête
+`Strict-Transport-Security` : le conteneur ne sert que du HTTP.
+
+### Image publiée
+
+L'image est publiée sur `ghcr.io/iziwas/secret-santa` :
+
+- `latest` suit `main`. Elle est aussi reconstruite chaque lundi, puis publiée seulement si
+  Trivy ne trouve aucune vulnérabilité haute ou critique ayant un correctif ;
+- `1.2.3` et `1.2` correspondent aux tags de version `v*`, et ne sont pas reconstruites.
 
 ### Commandes Docker utiles
 
@@ -111,7 +127,9 @@ secret-santa/
 ├── src/
 │   ├── App.jsx           # Composant principal
 │   ├── main.jsx          # Point d'entrée
-│   └── App.css           # Styles globaux
+│   ├── secretSanta.js    # Algorithme de tirage
+│   ├── secretSanta.test.js # Tests de l'algorithme
+│   └── index.css         # Styles globaux
 ├── public/               # Fichiers statiques
 ├── index.html            # Template HTML
 ├── package.json          # Dépendances du projet
@@ -152,12 +170,13 @@ secret-santa/
 - **React 19** - Framework JavaScript
 - **Vite 7** - Build tool ultra-rapide
 - **Tailwind CSS 4** - Framework CSS, compilé au build via `@tailwindcss/vite`
-- **IBM Plex Sans / IBM Plex Mono** - Typographies (Google Fonts)
+- **IBM Plex Sans / IBM Plex Mono** - Typographies, servies par l'application via Fontsource
+  (aucune requête vers un service externe)
 - **SheetJS (xlsx)** - Lecture/écriture Excel, installé depuis le CDN officiel
   `cdn.sheetjs.com` (le paquet publié sur npm est figé en 0.18.5 et porte deux
   vulnérabilités non corrigées). Le build nécessite donc un accès réseau à ce CDN.
 - **Lucide React** - Icônes modernes
-- **serve** - Serveur de fichiers statiques (pour Docker)
+- **nginx** - Serveur de fichiers statiques, sans root (pour Docker)
 
 ## Résolution de problèmes
 

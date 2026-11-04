@@ -14,15 +14,17 @@ function shuffle(array) {
  * et où les exclusions sont respectées.
  *
  * @param {string[]} participants
- * @param {Record<string, string[]>} exclusions donneur -> receveurs interdits
+ * @param {Map<string, string[]>} exclusions donneur -> receveurs interdits.
+ *   Une Map, car les noms sont saisis librement : dans un objet, "constructor"
+ *   ou "__proto__" désigneraient des propriétés héritées.
  * @returns {{giver: string, receiver: string}[] | null} null si aucun tirage
  *   valide n'a été trouvé en MAX_ATTEMPTS essais
  */
-export function generateAssignments(participants, exclusions = {}) {
+export function generateAssignments(participants, exclusions = new Map()) {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const receivers = shuffle(participants);
         const valid = participants.every((giver, i) =>
-            giver !== receivers[i] && !exclusions[giver]?.includes(receivers[i])
+            giver !== receivers[i] && !exclusions.get(giver)?.includes(receivers[i])
         );
 
         if (valid) {
