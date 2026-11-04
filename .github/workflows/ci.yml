@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       # Même version majeure que le Dockerfile
       - uses: actions/setup-node@v7
@@ -27,7 +29,11 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm ci --ignore-scripts
+
+      # Échoue sur une vulnérabilité haute ou critique, y compris en développement.
+      # Ne couvre pas xlsx, installé depuis le CDN de SheetJS.
+      - run: npm audit --audit-level=high
 
       - run: npm run lint
 
@@ -41,6 +47,8 @@ jobs:
     needs: verify
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-buildx-action@v4
 
@@ -55,14 +63,21 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Démarrer le conteneur
-        run: docker run -d --name secret-santa -p 3000:3000 secret-santa:ci
+        run: >-
+          docker run -d --name secret-santa -p 3000:3000
+          --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges
+          secret-santa:ci
 
-      - name: Vérifier que l'application répond
+      - name: Vérifier que l'application répond avec ses en-têtes de sécurité
         run: |
           curl --fail --silent --show-error \
             --retry 15 --retry-delay 1 --retry-all-errors \
-            --output index.html http://localhost:3000/
+            --dump-header headers.txt --output index.html http://localhost:3000/
           grep -q '<div id="root">' index.html
+          grep -qi '^content-security-policy:' headers.txt
+
+      - name: Vérifier que le conteneur ne tourne pas en root
+        run: test "$(docker exec secret-santa id -u)" != "0"
 
       - name: Afficher les logs du conteneur
         if: failure()
@@ -78,6 +93,8 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: docker/setup-buildx-action@v4
 
@@ -99,10 +116,11 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha
 
+      # Sans cache, pour que l'image publiée embarque les derniers correctifs Alpine
       - uses: docker/build-push-action@v7
         with:
           context: .
           push: true
+          pull: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha

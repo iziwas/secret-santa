@@ -5,7 +5,7 @@ import { generateAssignments } from './secretSanta';
 
 export default function SecretSantaApp() {
     const [participants, setParticipants] = useState([]);
-    const [exclusions, setExclusions] = useState({});
+    const [exclusions, setExclusions] = useState(() => new Map());
     const [assignments, setAssignments] = useState([]);
     const [error, setError] = useState('');
     const [newParticipant, setNewParticipant] = useState('');
@@ -28,12 +28,11 @@ export default function SecretSantaApp() {
     const removeParticipant = (name) => {
         setParticipants(participants.filter(p => p !== name));
         // Nettoyer les exclusions liées
-        const newExclusions = { ...exclusions };
-        delete newExclusions[name];
-        Object.keys(newExclusions).forEach(key => {
-            newExclusions[key] = newExclusions[key].filter(e => e !== name);
-            if (newExclusions[key].length === 0) {
-                delete newExclusions[key];
+        const newExclusions = new Map();
+        exclusions.forEach((receivers, giver) => {
+            const remaining = receivers.filter(r => r !== name);
+            if (giver !== name && remaining.length > 0) {
+                newExclusions.set(giver, remaining);
             }
         });
         setExclusions(newExclusions);
@@ -47,16 +46,12 @@ export default function SecretSantaApp() {
             return;
         }
 
-        const newExclusions = { ...exclusions };
-        if (!newExclusions[selectedGiver]) {
-            newExclusions[selectedGiver] = [];
-        }
-        if (newExclusions[selectedGiver].includes(selectedReceiver)) {
+        const receivers = exclusions.get(selectedGiver) ?? [];
+        if (receivers.includes(selectedReceiver)) {
             setError('Cette exclusion existe déjà.');
             return;
         }
-        newExclusions[selectedGiver].push(selectedReceiver);
-        setExclusions(newExclusions);
+        setExclusions(new Map(exclusions).set(selectedGiver, [...receivers, selectedReceiver]));
         setSelectedGiver('');
         setSelectedReceiver('');
         setError('');
@@ -64,10 +59,12 @@ export default function SecretSantaApp() {
     };
 
     const removeExclusion = (giver, receiver) => {
-        const newExclusions = { ...exclusions };
-        newExclusions[giver] = newExclusions[giver].filter(r => r !== receiver);
-        if (newExclusions[giver].length === 0) {
-            delete newExclusions[giver];
+        const newExclusions = new Map(exclusions);
+        const remaining = exclusions.get(giver).filter(r => r !== receiver);
+        if (remaining.length > 0) {
+            newExclusions.set(giver, remaining);
+        } else {
+            newExclusions.delete(giver);
         }
         setExclusions(newExclusions);
         setAssignments([]);
@@ -88,8 +85,7 @@ export default function SecretSantaApp() {
         reader.onload = (event) => {
             try {
                 const data = new Uint8Array(event.target.result);
-                // Utiliser defval pour éviter les injections de propriétés
-                const workbook = XLSX.read(data, { type: 'array', defval: '' });
+                const workbook = XLSX.read(data, { type: 'array' });
 
                 // Validation des onglets
                 if (!workbook.SheetNames || workbook.SheetNames.length < 2) {
@@ -100,10 +96,12 @@ export default function SecretSantaApp() {
                 // Lecture du premier onglet (participants)
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const participantsData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-                const participantsList = participantsData
-                    .slice(1)
-                    .map(row => String(row[0] || '').trim())
-                    .filter(name => name && name.length > 0 && name.length <= 100);
+                const participantsList = [...new Set(
+                    participantsData
+                        .slice(1)
+                        .map(row => String(row[0] || '').trim())
+                        .filter(name => name && name.length > 0 && name.length <= 100)
+                )];
 
                 if (participantsList.length === 0) {
                     setError('Aucun participant valide trouvé. Vérifie l\'onglet 1.');
@@ -114,16 +112,14 @@ export default function SecretSantaApp() {
                 const secondSheet = workbook.Sheets[workbook.SheetNames[1]];
                 const exclusionsData = XLSX.utils.sheet_to_json(secondSheet, { header: 1, defval: '' });
 
-                const exclusionsMap = {};
+                const exclusionsMap = new Map();
                 for (let i = 1; i < exclusionsData.length; i++) {
                     const giver = String(exclusionsData[i][0] || '').trim();
                     const excluded = String(exclusionsData[i][1] || '').trim();
                     if (giver && excluded && giver.length <= 100 && excluded.length <= 100) {
-                        if (!exclusionsMap[giver]) {
-                            exclusionsMap[giver] = [];
-                        }
-                        if (!exclusionsMap[giver].includes(excluded)) {
-                            exclusionsMap[giver].push(excluded);
+                        const receivers = exclusionsMap.get(giver) ?? [];
+                        if (!receivers.includes(excluded)) {
+                            exclusionsMap.set(giver, [...receivers, excluded]);
                         }
                     }
                 }
@@ -170,7 +166,7 @@ export default function SecretSantaApp() {
 
 
 
-    const exclusionCount = Object.values(exclusions).flat().length;
+    const exclusionCount = [...exclusions.values()].flat().length;
     const ready = participants.length >= 2;
 
     return (
@@ -284,6 +280,7 @@ export default function SecretSantaApp() {
                                     onChange={(e) => setNewParticipant(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && addParticipant()}
                                     placeholder="Nom du participant"
+                                    maxLength={100}
                                     className="flex-1 rounded-panel border border-line bg-panel px-3 py-1.5 text-sm text-text placeholder:text-faint focus:border-accent focus:outline-none"
                                 />
                                 <button
@@ -305,7 +302,7 @@ export default function SecretSantaApp() {
                                 </p>
                             ) : (
                                 <ul className="max-h-80 divide-y divide-line overflow-y-auto">
-                                    {Object.entries(exclusions).map(([giver, receivers]) =>
+                                    {[...exclusions].map(([giver, receivers]) =>
                                         receivers.map((receiver, i) => (
                                             <li
                                                 key={`${giver}-${receiver}-${i}`}

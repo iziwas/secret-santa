@@ -28,18 +28,18 @@ describe('generateAssignments', () => {
     });
 
     it('respecte les exclusions', () => {
-        const exclusions = { Alice: ['Bob', 'Claire'], David: ['Emma'] };
+        const exclusions = new Map([['Alice', ['Bob', 'Claire']], ['David', ['Emma']]]);
 
         for (let i = 0; i < DRAWS; i++) {
             const result = toMap(generateAssignments(PARTICIPANTS, exclusions));
 
-            expect(exclusions.Alice).not.toContain(result.Alice);
-            expect(exclusions.David).not.toContain(result.David);
+            expect(exclusions.get('Alice')).not.toContain(result.Alice);
+            expect(exclusions.get('David')).not.toContain(result.David);
         }
     });
 
     it("trouve l'unique tirage possible quand les exclusions n'en laissent qu'un", () => {
-        const result = generateAssignments(['Alice', 'Bob', 'Claire'], { Alice: ['Claire'] });
+        const result = generateAssignments(['Alice', 'Bob', 'Claire'], new Map([['Alice', ['Claire']]]));
 
         expect(toMap(result)).toEqual({ Alice: 'Bob', Bob: 'Claire', Claire: 'Alice' });
     });
@@ -61,26 +61,31 @@ describe('generateAssignments', () => {
     });
 
     it('ignore les exclusions visant une personne absente', () => {
-        const result = generateAssignments(['Alice', 'Bob'], { Alice: ['Zoé'], Zoé: ['Bob'] });
+        const result = generateAssignments(['Alice', 'Bob'], new Map([['Alice', ['Zoé']], ['Zoé', ['Bob']]]));
 
         expect(toMap(result)).toEqual({ Alice: 'Bob', Bob: 'Alice' });
     });
 
     it('renvoie null quand aucun tirage ne respecte les exclusions', () => {
-        expect(generateAssignments(['Alice', 'Bob'], { Alice: ['Bob'] })).toBeNull();
+        expect(generateAssignments(['Alice', 'Bob'], new Map([['Alice', ['Bob']]]))).toBeNull();
         expect(generateAssignments(
             ['Alice', 'Bob', 'Claire'],
-            { Alice: ['Claire'], Bob: ['Claire'] },
+            new Map([['Alice', ['Claire']], ['Bob', ['Claire']]]),
         )).toBeNull();
+    });
+
+    it.each(['constructor', '__proto__', 'toString'])('accepte un participant nommé %s', (name) => {
+        expect(toMap(generateAssignments([name, 'Bob']))).toEqual({ [name]: 'Bob', Bob: name });
+        expect(generateAssignments([name, 'Bob'], new Map([[name, ['Bob']]]))).toBeNull();
     });
 
     it('ne modifie pas ses paramètres', () => {
         const participants = ['Alice', 'Bob', 'Claire'];
-        const exclusions = { Alice: ['Bob'] };
+        const exclusions = new Map([['Alice', ['Bob']]]);
 
         generateAssignments(participants, exclusions);
 
         expect(participants).toEqual(['Alice', 'Bob', 'Claire']);
-        expect(exclusions).toEqual({ Alice: ['Bob'] });
+        expect(exclusions).toEqual(new Map([['Alice', ['Bob']]]));
     });
 });
