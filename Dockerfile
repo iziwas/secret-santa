@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build
 
 # Étape 2 : image finale, nginx sans root et les fichiers statiques.
-FROM nginxinc/nginx-unprivileged:1.30-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 
 # Applique les correctifs Alpine parus depuis la publication de l'image de base,
 # et retire curl, inutile ici (le healthcheck utilise le wget de busybox).
