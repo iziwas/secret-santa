@@ -27,7 +27,7 @@ Application web moderne pour générer automatiquement les attributions de Secre
 ### 1. Cloner le repository
 
 ```bash
-git clone https://github.com/votre-username/secret-santa.git
+git clone https://github.com/iziwas/secret-santa.git
 cd secret-santa
 ```
 
@@ -139,6 +139,7 @@ secret-santa/
 ├── Dockerfile            # Configuration Docker
 ├── nginx.conf            # Configuration Nginx
 ├── .dockerignore         # Fichiers ignorés par Docker
+├── LICENSE               # Licence MIT
 └── README.md             # Ce fichier
 ```
 
@@ -217,9 +218,9 @@ Si l'algorithme ne trouve pas de solution après 1000 tentatives :
 - Vérifiez qu'il n'y a pas de conflits circulaires
 - Assurez-vous d'avoir au moins 3 participants
 
-## License
+## Licence
 
-MIT License - Libre d'utilisation et modification
+Ce projet est distribué sous licence MIT : voir le fichier [LICENSE](LICENSE).
 
 ## Contribution
 
