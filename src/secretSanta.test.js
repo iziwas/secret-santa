@@ -89,3 +89,62 @@ describe('generateAssignments', () => {
         expect(exclusions).toEqual(new Map([['Alice', ['Bob']]]));
     });
 });
+
+describe('generateAssignments avec des exclusions très contraignantes', () => {
+    const names = (prefix, count) => Array.from({ length: count }, (_, i) => `${prefix}${i}`);
+
+    // Personne ne peut offrir à un membre de son foyer.
+    const twoHouseholds = (size) => {
+        const households = [names('A', size), names('B', size)];
+        const exclusions = new Map(households.flatMap(household =>
+            household.map(person => [person, household.filter(other => other !== person)])
+        ));
+        return { households, participants: households.flat(), exclusions };
+    };
+
+    it('trouve toujours un tirage pour deux foyers de 10 personnes', () => {
+        const { households: [householdA], participants, exclusions } = twoHouseholds(10);
+
+        for (let i = 0; i < 50; i++) {
+            const result = generateAssignments(participants, exclusions);
+
+            expect(result.map(a => a.receiver).sort()).toEqual([...participants].sort());
+            for (const { giver, receiver } of result) {
+                expect(householdA.includes(giver)).not.toBe(householdA.includes(receiver));
+            }
+        }
+    });
+
+    it("trouve l'unique tirage possible parmi 12 participants", () => {
+        const participants = names('P', 12);
+        const successorOf = (i) => participants[(i + 1) % participants.length];
+        const exclusions = new Map(participants.map((person, i) => [
+            person,
+            participants.filter(other => other !== person && other !== successorOf(i)),
+        ]));
+
+        expect(generateAssignments(participants, exclusions))
+            .toEqual(participants.map((giver, i) => ({ giver, receiver: successorOf(i) })));
+    });
+
+    it("renvoie null quand deux participants n'ont qu'un seul et même receveur possible", () => {
+        const participants = names('P', 20);
+        const [first, second, onlyReceiver] = participants;
+        const forbidden = participants.filter(other => other !== onlyReceiver);
+        const exclusions = new Map([[first, forbidden], [second, forbidden]]);
+
+        expect(generateAssignments(participants, exclusions)).toBeNull();
+    });
+
+    it('laisse sa chance à chaque receveur autorisé', () => {
+        const { households: [householdA, householdB], participants, exclusions } = twoHouseholds(10);
+        const seen = new Set();
+
+        for (let i = 0; i < 500; i++) {
+            const result = generateAssignments(participants, exclusions);
+            seen.add(result.find(a => a.giver === householdA[0]).receiver);
+        }
+
+        expect(seen).toEqual(new Set(householdB));
+    });
+});
