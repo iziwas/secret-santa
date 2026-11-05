@@ -9,6 +9,7 @@ Application web moderne pour générer automatiquement les attributions de Secre
 ## Fonctionnalités
 
 - **Import Excel** : Chargez vos participants et exclusions depuis un fichier Excel
+- **Modèle Excel** : Téléchargez un fichier prêt à remplir depuis l'application
 - **Gestion manuelle** : Ajoutez/supprimez participants et exclusions via l'interface
 - **Onglets organisés** : Interface claire avec onglets séparés pour participants et exclusions
 - **Génération automatique** : Algorithme intelligent qui respecte toutes les contraintes
@@ -127,6 +128,8 @@ secret-santa/
 ├── src/
 │   ├── App.jsx           # Composant principal
 │   ├── main.jsx          # Point d'entrée
+│   ├── excel.js          # Modèle Excel et lecture des fichiers importés
+│   ├── excel.test.js     # Tests du modèle et de la lecture
 │   ├── secretSanta.js    # Algorithme de tirage
 │   ├── secretSanta.test.js # Tests de l'algorithme
 │   └── index.css         # Styles globaux
@@ -140,6 +143,8 @@ secret-santa/
 ```
 
 ## Format du fichier Excel
+
+Le plus simple est de partir du modèle proposé par le lien **Télécharger le modèle Excel**, sous la zone d'import. Son 3e onglet, « Mode d'emploi », n'est pas lu à l'import.
 
 ### Onglet 1 - Participants
 
@@ -160,7 +165,7 @@ secret-santa/
 
 ## Utilisation
 
-1. **Importer un fichier Excel** ou ajouter des participants manuellement
+1. **Importer un fichier Excel**, à partir du modèle téléchargeable, ou ajouter des participants manuellement
 2. **Définir les exclusions** (couples, famille, etc.)
 3. **Générer le Secret Santa** en un clic
 4. **Télécharger les résultats** au format Excel
