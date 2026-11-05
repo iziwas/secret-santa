@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
-import { Upload, AlertCircle } from 'lucide-react';
+import { Upload, AlertCircle, Download } from 'lucide-react';
+import { buildTemplateWorkbook, parseWorkbook } from './excel';
 import { generateAssignments } from './secretSanta';
 
 export default function SecretSantaApp() {
@@ -74,6 +75,9 @@ export default function SecretSantaApp() {
         const file = e.target.files[0];
         if (!file) return;
 
+        // Sans cela, resélectionner le même fichier une fois corrigé ne déclenche pas onChange.
+        e.target.value = '';
+
         // Validation du fichier
         const maxFileSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxFileSize) {
@@ -85,47 +89,15 @@ export default function SecretSantaApp() {
         reader.onload = (event) => {
             try {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+                const result = parseWorkbook(XLSX.read(data, { type: 'array' }));
 
-                // Validation des onglets
-                if (!workbook.SheetNames || workbook.SheetNames.length < 2) {
-                    setError('Le fichier doit contenir au moins 2 onglets.');
+                if (result.error) {
+                    setError(result.error);
                     return;
                 }
 
-                // Lecture du premier onglet (participants)
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const participantsData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
-                const participantsList = [...new Set(
-                    participantsData
-                        .slice(1)
-                        .map(row => String(row[0] || '').trim())
-                        .filter(name => name && name.length > 0 && name.length <= 100)
-                )];
-
-                if (participantsList.length === 0) {
-                    setError('Aucun participant valide trouvé. Vérifie l\'onglet 1.');
-                    return;
-                }
-
-                // Lecture du deuxième onglet (exclusions)
-                const secondSheet = workbook.Sheets[workbook.SheetNames[1]];
-                const exclusionsData = XLSX.utils.sheet_to_json(secondSheet, { header: 1, defval: '' });
-
-                const exclusionsMap = new Map();
-                for (let i = 1; i < exclusionsData.length; i++) {
-                    const giver = String(exclusionsData[i][0] || '').trim();
-                    const excluded = String(exclusionsData[i][1] || '').trim();
-                    if (giver && excluded && giver.length <= 100 && excluded.length <= 100) {
-                        const receivers = exclusionsMap.get(giver) ?? [];
-                        if (!receivers.includes(excluded)) {
-                            exclusionsMap.set(giver, [...receivers, excluded]);
-                        }
-                    }
-                }
-
-                setParticipants(participantsList);
-                setExclusions(exclusionsMap);
+                setParticipants(result.participants);
+                setExclusions(result.exclusions);
                 setAssignments([]);
                 setError('');
             } catch {
@@ -162,6 +134,10 @@ export default function SecretSantaApp() {
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Résultats');
         XLSX.writeFile(wb, 'secret_santa_resultats.xlsx');
+    };
+
+    const downloadTemplate = () => {
+        XLSX.writeFile(buildTemplateWorkbook(), 'secret_santa_modele.xlsx');
     };
 
 
@@ -212,6 +188,14 @@ export default function SecretSantaApp() {
                         onChange={handleFileUpload}
                     />
                 </label>
+                <button
+                    type="button"
+                    onClick={downloadTemplate}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-muted underline underline-offset-2 transition-colors hover:text-accent"
+                >
+                    <Download className="h-3.5 w-3.5 shrink-0" />
+                    Télécharger le modèle Excel
+                </button>
 
                 {error && (
                     <div
