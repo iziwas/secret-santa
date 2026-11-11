@@ -26,7 +26,8 @@ jobs:
 
       - uses: docker/setup-buildx-action@v4
 
-      # Sans cache, pour embarquer les derniers correctifs des images de base et d'Alpine
+      # Sans cache, pour embarquer les derniers correctifs des images de base et d'Alpine.
+      # Seule construction du workflow : cette image est scannée, testée puis publiée telle quelle.
       - uses: docker/build-push-action@v7
         with:
           context: .
@@ -34,6 +35,9 @@ jobs:
           pull: true
           no-cache: true
           tags: secret-santa:weekly
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.checkout.outputs.commit }}
 
       # Échoue, et bloque la publication, sur une CVE haute ou critique ayant un correctif.
       # Épinglé sur un commit : un tag d'action peut être déplacé. Dependabot le met à jour.
@@ -65,12 +69,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Réutilise les couches construites et scannées ci-dessus
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/${{ github.repository }}:latest
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ steps.checkout.outputs.commit }}
+      # Publie l'image scannée et testée ci-dessus, sans la reconstruire :
+      # un second build pourrait produire une image différente de celle validée.
+      - name: Publier l'image validée
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}:latest
+        run: |
+          docker tag secret-santa:weekly "$IMAGE"
+          docker push "$IMAGE"
