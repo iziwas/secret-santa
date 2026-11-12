@@ -1,6 +1,6 @@
 # Étape 1 : build de l'application.
 # Node, npm et les node_modules restent dans cette étape : ils n'arrivent pas dans l'image finale.
-FROM node:22-alpine AS build
+FROM node:25-alpine AS build
 
 WORKDIR /app
 
