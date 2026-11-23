@@ -5,6 +5,12 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Les versions majeures impaires de Node ne sont jamais LTS (fin de vie après 8 mois),
+      # et un changement de majeure doit aussi être fait dans ci.yml : il se fait à la main,
+      # vers la LTS suivante.
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
